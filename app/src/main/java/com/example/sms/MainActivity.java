@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
          ToView =  findViewById(R.id.ToView);
          MessageView = findViewById(R.id.MessageView);
 
-        final ArrayAdapter<String> itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        final ArrayAdapter<String> itemsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
 
         snd.setOnClickListener(new View.OnClickListener() {
             @Override
