@@ -25,21 +25,18 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button snd;
     EditText ToView;
     EditText MessageView;
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        snd = (Button) findViewById(R.id.snd);
-        ToView = (EditText) findViewById(R.id.ToView);
-        MessageView = (EditText) findViewById(R.id.MessageView);
+
+        Button snd = findViewById(R.id.snd);
+         ToView =  findViewById(R.id.ToView);
+         MessageView = findViewById(R.id.MessageView);
 
         final ArrayAdapter<String> itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
 
@@ -49,21 +46,17 @@ public class MainActivity extends AppCompatActivity {
                 sendMessage(itemsAdapter);
             }
         });
-//
-//
-//
 
         ListView listView = (ListView) findViewById(R.id.listview);
         listView.setAdapter(itemsAdapter);
     }
 
     protected void sendMessage(ArrayAdapter<String> itemsAdapter){
-        try {
-            String to = ToView.getText().toString();
-            String message = MessageView.getText().toString();
-            itemsAdapter.add(to+": "+message);
+        String to = ToView.getText().toString();
+        String message = MessageView.getText().toString();
 
-            URL url = new URL("http://localhost:3000/myroute/send?to="+to+"&message="+message);
+        try {
+            URL url = new URL("http://localhost:3000/myroute/send?to="+to+"&message="+message); // Sending to server
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.connect();
             Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_LONG).show();
@@ -73,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "ERROR:\n"+e, Toast.LENGTH_LONG).show();
         }
 
-
+        itemsAdapter.add(to+": "+message); // Adding from server
     }
 
 }
