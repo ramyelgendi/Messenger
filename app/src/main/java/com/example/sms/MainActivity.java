@@ -66,7 +66,9 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "ERROR:\n"+e, Toast.LENGTH_LONG).show();
         }
 
-        itemsAdapter.add(to+": "+message); // Adding from server
+
+        // Code to add from server
+        itemsAdapter.add(to+": "+message); // Adding to array to display.
     }
 
 }
