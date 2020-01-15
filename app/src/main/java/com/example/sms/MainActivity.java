@@ -23,10 +23,12 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -57,9 +59,6 @@ public class MainActivity extends AppCompatActivity {
     ArrayAdapter<String> itemsAdapter;
     RequestQueue requestQueue;
 
-
-    //// best sauce i could find https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
-    //// also this https://dzone.com/articles/how-to-parse-json-data-from-a-rest-api-using-simpl
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,61 +139,29 @@ public class MainActivity extends AppCompatActivity {
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                String url = "http://10.0.2.2:3000/myroute/getsms/"+frm;
-//
-//                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-//
-//                            @Override
-//                            public void onResponse(JSONObject response) {
-//                                try {
-//                                    String frm = response.getString("src_num");
-//                                    String msg = response.getString("msg");
-//                                    int id = response.getInt("id");
-//                                    itemsAdapter.add(frm+": "+msg);
-////                                    sent(id);
-//                                } catch (Exception err) {
-//                                    System.out.println(err.toString());
-//                                }
-//                            }
-//                        }, new Response.ErrorListener() {
-//
-//                            @Override
-//                            public void onErrorResponse(VolleyError error) {
-//                                // TODO: Handle error
-//
-//                            }
-//                        });
-//                requestQueue.add(jsonObjectRequest);
-                final String url = "http://10.0.2.2:3000/myroute/getsms/"+frm;
+                String url = "http://10.0.2.2:3000/myroute/getsms/" + frm;
 
-                JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-                        new Response.Listener<JSONObject>()
-                        {
-                            @Override
-                            public void onResponse(JSONObject response) {
-
-                                try {
-                                    String frm = response.getString("src_num");
-                                    String msg = response.getString("msg");
-                                    int id = response.getInt("id");
-                                    itemsAdapter.add(frm + ": " + msg);
-                                    Log.d("Response", response.toString());
-                                }
-                                catch (Exception err) {
-                                    Log.d("excpetion", err.toString());
-                                }
-                            }
-                        },
-                        new Response.ErrorListener()
-                        {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Log.d("Error.Response", error.toString());
-                            }
+                JsonArrayRequest jsonObjectRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response_arr) {
+                        try {
+                            JSONObject response = response_arr.getJSONObject(0);
+                            String frm = response.getString("src_num");
+                            String msg = response.getString("msg");
+                            int id = response.getInt("id");
+                            itemsAdapter.add(frm + ": " + msg);
+                                    sent(id);
+                        } catch (Exception err) {
+                            System.out.println(err.toString());
                         }
-                );
-
-                requestQueue.add(getRequest);
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("Error.Response", error.toString());
+                    }
+                });
+                requestQueue.add(jsonObjectRequest);
             }
         });
 
@@ -203,26 +170,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void sent(int id) {
-        String url = "http://10.0.2.2:3000/myroute/hw";
-
-//                    @Override
-//                    public void onResponse(JSONObject response) {
-//                        System.out.println("Response: " + response.toString());
-//                    }
-//                }, new Response.ErrorListener() {
-//
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//                        // TODO: Handle error
-//
-//                    }
-//                });
-
-// Access the RequestQueue through your singleton class.
-//        requestQueue.add(jsonObjectRequest);
-
-        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
-
+        String url = "http://10.0.2.2:3000/myroute/sentsms/" + id;
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
@@ -252,7 +200,6 @@ public class MainActivity extends AppCompatActivity {
 
         requestQueue.add(stringRequest);
     }
-
 
 
     //// MANUAL ASYNC TASK BELOW
@@ -328,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Message doInBackground(String... url) {
-            String resp= "";
+            String resp = "";
             try {
                 URL link = new URL("http://localhost:3000/myroute/getsms");
                 HttpURLConnection conn = (HttpURLConnection) link.openConnection();
@@ -356,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Message result) {
             sent_msg task = new sent_msg();
-            task.execute(new Message[] { result });
+            task.execute(new Message[]{result});
         }
     }
 
@@ -365,16 +312,16 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(Message... in) {
             String resp = "";
-                try {
-                    URL link = new URL("http://localhost:3000/myroute/sentsms/" + in[0].id);
-                    HttpURLConnection conn = (HttpURLConnection) link.openConnection();
-                    conn.setRequestMethod("GET");
-                    conn.connect();
+            try {
+                URL link = new URL("http://localhost:3000/myroute/sentsms/" + in[0].id);
+                HttpURLConnection conn = (HttpURLConnection) link.openConnection();
+                conn.setRequestMethod("GET");
+                conn.connect();
 
-                } catch (Exception err) {
-                    System.out.println(err.getMessage());
-                }
-                return resp;
+            } catch (Exception err) {
+                System.out.println(err.getMessage());
+            }
+            return resp;
         }
     }
 
