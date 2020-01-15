@@ -133,6 +133,8 @@ public class MainActivity extends AppCompatActivity {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                ToView.setText("");
+                MessageView.setText("");
             }
         });
 
@@ -192,7 +194,6 @@ public class MainActivity extends AppCompatActivity {
                 String responseString = "";
                 if (response != null) {
                     responseString = String.valueOf(response.statusCode);
-                    // can get more details such as response.headers
                 }
                 return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
             }
