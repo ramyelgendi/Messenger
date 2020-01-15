@@ -74,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
         snd = (Button) findViewById(R.id.snd);
         ToView = (EditText) findViewById(R.id.ToView);
         MessageView = (EditText) findViewById(R.id.MessageView);
-        refresh = findViewById(R.id.refresh);
         requestQueue = Volley.newRequestQueue(this);
 
         itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mesgs);
@@ -139,35 +138,6 @@ public class MainActivity extends AppCompatActivity {
                 MessageView.setText("");
             }
         });
-
-//        refresh.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                String url = "http://10.0.2.2:3000/myroute/getsms/" + frm;
-//
-//                JsonArrayRequest jsonObjectRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
-//                    @Override
-//                    public void onResponse(JSONArray response_arr) {
-//                        try {
-//                            JSONObject response = response_arr.getJSONObject(0);
-//                            String frm = response.getString("src_num");
-//                            String msg = response.getString("msg");
-//                            int id = response.getInt("id");
-//                            itemsAdapter.add(frm + ": " + msg);
-//                                    sent(id);
-//                        } catch (Exception err) {
-//                            System.out.println(err.toString());
-//                        }
-//                    }
-//                }, new Response.ErrorListener() {
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//                        Log.d("Error.Response", error.toString());
-//                    }
-//                });
-//                requestQueue.add(jsonObjectRequest);
-//            }
-//        });
 
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
