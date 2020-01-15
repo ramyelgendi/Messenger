@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Adapter;
 import android.widget.ArrayAdapter;
@@ -18,9 +19,11 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -77,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(String... in) {
             String resp = "";
             try {
-                URL link = new URL("http://localhost:3000/myroute/sendsms");
+                URL link = new URL("http://10.0.2.2:3000/myroute/sendsms");
                 HttpURLConnection urlConnection = (HttpURLConnection) link.openConnection();
                 urlConnection.setRequestMethod("POST");
                 urlConnection.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -93,17 +96,36 @@ public class MainActivity extends AppCompatActivity {
 //                byte[] input = body.toString().getBytes("utf-8");
 //                os.write(input, 0, input.length);
 //            }
-                try (DataOutputStream wr = new DataOutputStream(urlConnection.getOutputStream())) {
-                    wr.writeBytes(body.toString());
-                    wr.flush();
-                }
+                OutputStream wr = urlConnection.getOutputStream();
+                wr.write(body.toString().getBytes("UTF-8"));
+                wr.close();
 
                 urlConnection.connect();
-                Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_LONG).show();
+
+                int status = urlConnection.getResponseCode();
+                Log.i("HTTP Client", "HTTP status code : " + status);
+                switch (status) {
+                    case 200:
+                    case 201:
+                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                        StringBuilder sb = new StringBuilder();
+                        String line;
+                        while ((line = bufferedReader.readLine()) != null) {
+                            sb.append(line + "\n");
+                        }
+                        bufferedReader.close();
+                        Log.i("HTTP Client", "Received String : " + sb.toString());
+                        //return received string
+                        return sb.toString();
+                }
+
+
+                Log.d("Message", "Message sent.");
+                //Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_LONG).show();
 
             } catch (Exception e) {
                 System.out.println(e.getMessage());
-                Toast.makeText(getApplicationContext(), "ERROR:\n" + e, Toast.LENGTH_LONG).show();
+//                Toast.makeText(getApplicationContext(), "ERROR:\n" + e, Toast.LENGTH_LONG).show();
             }
 
             return resp;
