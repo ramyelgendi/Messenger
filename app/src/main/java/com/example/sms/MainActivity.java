@@ -15,6 +15,19 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -26,6 +39,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -35,11 +49,13 @@ import java.util.Scanner;
 public class MainActivity extends AppCompatActivity {
 
     Button snd;
+    Button refresh;
     EditText ToView;
     EditText MessageView;
     String frm;
     ArrayList<String> mesgs;
     ArrayAdapter<String> itemsAdapter;
+    RequestQueue requestQueue;
 
 
     //// best sauce i could find https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
@@ -50,13 +66,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        frm = "mobile_user";
+        frm = "01003435365";
 
         mesgs = new ArrayList<>();
 
         snd = (Button) findViewById(R.id.snd);
         ToView = (EditText) findViewById(R.id.ToView);
         MessageView = (EditText) findViewById(R.id.MessageView);
+        refresh = findViewById(R.id.refresh);
+        requestQueue = Volley.newRequestQueue(this);
 
         itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mesgs);
         itemsAdapter.setNotifyOnChange(true);
@@ -64,15 +82,180 @@ public class MainActivity extends AppCompatActivity {
         snd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                send_msg sender = new send_msg();
-                sender.execute(new String[] {ToView.getText().toString(), MessageView.getText().toString()});
+//                send_msg sender = new send_msg();
+//                sender.execute(new String[] {ToView.getText().toString(), MessageView.getText().toString()});
                 itemsAdapter.add(ToView.getText().toString() + ": " + MessageView.getText().toString());
+                try {
+                    String URL = "http://10.0.2.2:3000/myroute/sendsms";
+                    JSONObject jsonBody = new JSONObject();
+                    jsonBody.put("src_num", frm);
+                    jsonBody.put("dest_num", ToView.getText().toString());
+                    jsonBody.put("msg", MessageView.getText().toString());
+                    final String requestBody = jsonBody.toString();
+
+                    StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            Log.i("VOLLEY", response);
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("VOLLEY", error.toString());
+                        }
+                    }) {
+                        @Override
+                        public String getBodyContentType() {
+                            return "application/json; charset=utf-8";
+                        }
+
+                        @Override
+                        public byte[] getBody() throws AuthFailureError {
+                            try {
+                                return requestBody.getBytes("utf-8");
+                            } catch (UnsupportedEncodingException uee) {
+                                VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                                return null;
+                            }
+                        }
+
+                        @Override
+                        protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                            String responseString = "";
+                            if (response != null) {
+                                responseString = String.valueOf(response.statusCode);
+                                // can get more details such as response.headers
+                            }
+                            return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+                        }
+                    };
+
+                    requestQueue.add(stringRequest);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                String url = "http://10.0.2.2:3000/myroute/getsms/"+frm;
+//
+//                JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+//
+//                            @Override
+//                            public void onResponse(JSONObject response) {
+//                                try {
+//                                    String frm = response.getString("src_num");
+//                                    String msg = response.getString("msg");
+//                                    int id = response.getInt("id");
+//                                    itemsAdapter.add(frm+": "+msg);
+////                                    sent(id);
+//                                } catch (Exception err) {
+//                                    System.out.println(err.toString());
+//                                }
+//                            }
+//                        }, new Response.ErrorListener() {
+//
+//                            @Override
+//                            public void onErrorResponse(VolleyError error) {
+//                                // TODO: Handle error
+//
+//                            }
+//                        });
+//                requestQueue.add(jsonObjectRequest);
+                final String url = "http://10.0.2.2:3000/myroute/getsms/"+frm;
+
+                JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                        new Response.Listener<JSONObject>()
+                        {
+                            @Override
+                            public void onResponse(JSONObject response) {
+
+                                try {
+                                    String frm = response.getString("src_num");
+                                    String msg = response.getString("msg");
+                                    int id = response.getInt("id");
+                                    itemsAdapter.add(frm + ": " + msg);
+                                    Log.d("Response", response.toString());
+                                }
+                                catch (Exception err) {
+                                    Log.d("excpetion", err.toString());
+                                }
+                            }
+                        },
+                        new Response.ErrorListener()
+                        {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.d("Error.Response", error.toString());
+                            }
+                        }
+                );
+
+                requestQueue.add(getRequest);
             }
         });
 
         ListView listView = (ListView) findViewById(R.id.listview);
         listView.setAdapter(itemsAdapter);
     }
+
+    void sent(int id) {
+        String url = "http://10.0.2.2:3000/myroute/hw";
+
+//                    @Override
+//                    public void onResponse(JSONObject response) {
+//                        System.out.println("Response: " + response.toString());
+//                    }
+//                }, new Response.ErrorListener() {
+//
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        // TODO: Handle error
+//
+//                    }
+//                });
+
+// Access the RequestQueue through your singleton class.
+//        requestQueue.add(jsonObjectRequest);
+
+        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i("VOLLEY", response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("VOLLEY", error.toString());
+            }
+        }) {
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
+            }
+
+            @Override
+            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                String responseString = "";
+                if (response != null) {
+                    responseString = String.valueOf(response.statusCode);
+                    // can get more details such as response.headers
+                }
+                return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+            }
+        };
+
+        requestQueue.add(stringRequest);
+    }
+
+
+
+    //// MANUAL ASYNC TASK BELOW
 
     private class send_msg extends AsyncTask<String, Void, String> {
 
@@ -96,9 +279,11 @@ public class MainActivity extends AppCompatActivity {
 //                byte[] input = body.toString().getBytes("utf-8");
 //                os.write(input, 0, input.length);
 //            }
-                OutputStream wr = urlConnection.getOutputStream();
-                wr.write(body.toString().getBytes("UTF-8"));
-                wr.close();
+//                OutputStream wr = urlConnection.getOutputStream();
+//                wr.write(body.toString().getBytes("UTF-8"));
+//                wr.close();
+
+                urlConnection.getOutputStream().write(body.toString().getBytes("UTF8"));
 
                 urlConnection.connect();
 
@@ -130,6 +315,7 @@ public class MainActivity extends AppCompatActivity {
 
             return resp;
         }
+
     }
 
 

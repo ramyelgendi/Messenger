@@ -31,12 +31,25 @@
             android:gravity="top"
             android:hint="Message" />
 
-        <Button
-            android:id="@+id/snd"
-            android:layout_width="100dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:text="Send" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/refresh"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:text="Get Messages" />
+
+            <Button
+                android:id="@+id/snd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send" />
+
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"
@@ -48,7 +61,7 @@
             android:id="@+id/textView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Messages List"
+            android:text="Messages"
             android:textAlignment="center"
             android:textSize="18sp"
             android:textStyle="bold" />
