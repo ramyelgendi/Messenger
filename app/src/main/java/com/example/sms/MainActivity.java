@@ -47,6 +47,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -138,9 +140,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        refresh.setOnClickListener(new View.OnClickListener() {
+//        refresh.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                String url = "http://10.0.2.2:3000/myroute/getsms/" + frm;
+//
+//                JsonArrayRequest jsonObjectRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
+//                    @Override
+//                    public void onResponse(JSONArray response_arr) {
+//                        try {
+//                            JSONObject response = response_arr.getJSONObject(0);
+//                            String frm = response.getString("src_num");
+//                            String msg = response.getString("msg");
+//                            int id = response.getInt("id");
+//                            itemsAdapter.add(frm + ": " + msg);
+//                                    sent(id);
+//                        } catch (Exception err) {
+//                            System.out.println(err.toString());
+//                        }
+//                    }
+//                }, new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        Log.d("Error.Response", error.toString());
+//                    }
+//                });
+//                requestQueue.add(jsonObjectRequest);
+//            }
+//        });
+
+        new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
-            public void onClick(View v) {
+            public void run() {
                 String url = "http://10.0.2.2:3000/myroute/getsms/" + frm;
 
                 JsonArrayRequest jsonObjectRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
@@ -152,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
                             String msg = response.getString("msg");
                             int id = response.getInt("id");
                             itemsAdapter.add(frm + ": " + msg);
-                                    sent(id);
+                            sent(id);
                         } catch (Exception err) {
                             System.out.println(err.toString());
                         }
@@ -164,8 +195,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 requestQueue.add(jsonObjectRequest);
+                //your method
             }
-        });
+        }, 0, 1000);//put here time 1000 milliseconds=1 second
 
         ListView listView = (ListView) findViewById(R.id.listview);
         listView.setAdapter(itemsAdapter);
