@@ -13,6 +13,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -21,24 +23,34 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity {
 
+    Button snd;
     EditText ToView;
     EditText MessageView;
+    String frm;
+    ArrayList<String> mesgs;
+
+    //// best sauce i could find https://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
+    //// also this https://dzone.com/articles/how-to-parse-json-data-from-a-rest-api-using-simpl
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        frm = "mobile_user";
 
-        Button snd = findViewById(R.id.snd);
-         ToView =  findViewById(R.id.ToView);
-         MessageView = findViewById(R.id.MessageView);
+        snd = (Button) findViewById(R.id.snd);
+        ToView = (EditText) findViewById(R.id.ToView);
+        MessageView = (EditText) findViewById(R.id.MessageView);
 
-        final ArrayAdapter<String> itemsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        final ArrayAdapter<String> itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mesgs);
+        itemsAdapter.setNotifyOnChange(true);
 
         snd.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,16 +59,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ListView listView = findViewById(R.id.listview);
+        ListView listView = (ListView) findViewById(R.id.listview);
         listView.setAdapter(itemsAdapter);
     }
 
     protected void sendMessage(ArrayAdapter<String> itemsAdapter){
-        String to = ToView.getText().toString();
-        String message = MessageView.getText().toString();
-
         try {
-            URL url = new URL("http://localhost:3000/myroute/send?to="+to+"&message="+message); // Sending to server
+            String to = ToView.getText().toString();
+            String message = MessageView.getText().toString();
+            itemsAdapter.add(to+": "+message);
+
+            URL url = new URL("http://localhost:3000/myroute/sendsms?src_num="+frm+"dest_num="+to+"&msg="+message);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.connect();
             Toast.makeText(getApplicationContext(), "Message Sent", Toast.LENGTH_LONG).show();
@@ -67,8 +80,44 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        // Code to add from server
-        itemsAdapter.add(to+": "+message); // Adding to array to display.
+    }
+
+    protected void getMessage(ArrayAdapter<String> adapter) {
+        try {
+            URL url = new URL("http://localhost:3000/myroute/getsms");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.connect();
+            String inline = "";
+            Scanner sc = new Scanner(url.openStream());
+            while(sc.hasNext())
+            {
+                inline+=sc.nextLine();
+            }
+            JSONObject json = new JSONObject(inline);
+            String from = json.getString("src_num");
+            String msg = json.getString("msg");
+
+            mesgs.add(from+": "+msg);
+
+            int id = json.getInt("id");
+            sentMessage(id);
+
+        } catch (Exception err) {
+            System.out.println(err.getMessage());
+        }
+    }
+
+    protected void sentMessage(int msg_id) {
+        try {
+            URL url = new URL("http://localhost:3000/myroute/sentsms?id="+msg_id);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.connect();
+
+        } catch (Exception err) {
+            System.out.println(err.getMessage());
+        }
     }
 
 }
